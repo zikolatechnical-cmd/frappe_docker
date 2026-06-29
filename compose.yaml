@@ -110,7 +110,7 @@ services:
       - backend
       - websocket
     ports:
-      - "8080:8080"
+      - "8181:8080"
 
 volumes:
   db-data:
