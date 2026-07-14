@@ -3,6 +3,7 @@ x-backend-defaults: &backend-defaults
   restart: '${RESTART_POLICY:-unless-stopped}'
   volumes:
     - sites:/home/frappe/frappe-bench/sites
+    - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
   depends_on:
     configurator:
@@ -117,3 +118,4 @@ volumes:
   redis-cache-data:
   redis-queue-data:
   sites:
+  apps:
