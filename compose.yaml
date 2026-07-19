@@ -74,15 +74,6 @@ services:
 
   backend:
     <<: *backend-defaults
-    entrypoint: [bash, -c]
-    command:
-      - >
-        ./env/bin/pip install -e apps/hrms;
-        gunicorn -b 0.0.0.0:8000 -w $$GUNICORN_WORKERS --threads $$GUNICORN_THREADS -t $$GUNICORN_TIMEOUT frappe.app:application
-    environment:
-      GUNICORN_WORKERS: '${GUNICORN_WORKERS:-2}'
-      GUNICORN_THREADS: '${GUNICORN_THREADS:-4}'
-      GUNICORN_TIMEOUT: '${GUNICORN_TIMEOUT:-120}'
 
   websocket:
     <<: *backend-defaults
@@ -90,27 +81,15 @@ services:
 
   queue-short:
     <<: *backend-defaults
-    entrypoint: [bash, -c]
-    command:
-      - >
-        ./env/bin/pip install -e apps/hrms;
-        bench worker --queue short,default
+    command: bench worker --queue short,default
 
   queue-long:
     <<: *backend-defaults
-    entrypoint: [bash, -c]
-    command:
-      - >
-        ./env/bin/pip install -e apps/hrms;
-        bench worker --queue long,default,short
+    command: bench worker --queue long,default,short
 
   scheduler:
     <<: *backend-defaults
-    entrypoint: [bash, -c]
-    command:
-      - >
-        ./env/bin/pip install -e apps/hrms;
-        bench schedule
+    command: bench schedule
 
   frontend:
     image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
