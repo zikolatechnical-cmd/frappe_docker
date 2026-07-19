@@ -42,15 +42,19 @@ services:
     volumes:
       - redis-queue-data:/data
 
-  configurator:
+configurator:
     image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
     restart: on-failure
     platform: linux/amd64
     volumes:
       - sites:/home/frappe/frappe-bench/sites
+      - apps:/home/frappe/frappe-bench/apps # <--- تأكد من وجود هذا السطر لربط مجلد التطبيقات
     entrypoint: [bash, -c]
     command:
       - >
+        if [ ! -d "apps/hrms" ]; then
+          bench get-app hrms --branch version-15;
+        fi;
         ls -1 apps > sites/apps.txt;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
