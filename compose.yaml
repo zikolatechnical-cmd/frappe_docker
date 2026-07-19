@@ -24,8 +24,7 @@ services:
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost",
-             "--password=${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "--password=${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -42,13 +41,13 @@ services:
     volumes:
       - redis-queue-data:/data
 
-configurator:
+  configurator:
     image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
     restart: on-failure
     platform: linux/amd64
     volumes:
       - sites:/home/frappe/frappe-bench/sites
-      - apps:/home/frappe/frappe-bench/apps # <--- تأكد من وجود هذا السطر لربط مجلد التطبيقات
+      - apps:/home/frappe/frappe-bench/apps
     entrypoint: [bash, -c]
     command:
       - >
