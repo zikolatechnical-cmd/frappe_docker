@@ -6,7 +6,6 @@ x-backend-defaults: &backend-defaults
     - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
   environment:
-    # الطريقة الرسمية لـ Frappe Docker لتثبيت التطبيق داخل بيئة كل حاوية تلقائياً عند الإقلاع
     INSTALL_APPS: hrms
     PIP_PACKAGES: "git+https://github.com/frappe/hrms.git@version-15"
   depends_on:
@@ -58,8 +57,11 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     entrypoint: [bash, -c]
+    # السطرين اللي في الأول دول بيضمنوا إن البينش يلاقي ملف الكومون كونفيج وميضربش أبداً
     command:
       - >
+        mkdir -p sites;
+        echo "{}" > sites/common_site_config.json;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
         bench set-config -g redis_cache "redis://$$REDIS_CACHE";
