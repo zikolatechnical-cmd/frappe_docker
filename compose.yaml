@@ -6,7 +6,6 @@ x-backend-defaults: &backend-defaults
     - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
   environment:
-    # الطريقة الرسمية والأسرع: الحاوية وهي بتقوم بتثبت الـ hrms في ثواني معدودة جوة الـ Env الخاص بيها
     INSTALL_APPS: hrms
     PIP_PACKAGES: "git+https://github.com/frappe/hrms.git@version-15"
   depends_on:
@@ -61,10 +60,8 @@ services:
     entrypoint: [bash, -c]
     command:
       - >
-        if [ ! -d "apps/hrms" ]; then
-          bench get-app hrms --branch version-15;
-        fi;
-        ls -1 apps > sites/apps.txt;
+        mkdir -p apps;
+        touch sites/apps.txt;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
         bench set-config -g redis_cache "redis://$$REDIS_CACHE";
