@@ -5,13 +5,6 @@ x-backend-defaults: &backend-defaults
     - sites:/home/frappe/frappe-bench/sites
     - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
-  entrypoint: [bash, -c] # <--- ضيف السطر ده
-  command: # <--- ضيف الكوماند ده عشان يضمن ربط التطبيق تلقائياً في أي كونتينر يقوم
-    - >
-      if [ -d "apps/hrms" ]; then
-        ./env/bin/pip install -e apps/hrms;
-      fi;
-      nginx-entrypoint.sh
   depends_on:
     configurator:
       condition: service_completed_successfully
@@ -81,6 +74,11 @@ services:
 
   backend:
     <<: *backend-defaults
+    entrypoint: [bash, -c]
+    command:
+      - >
+        ./env/bin/pip install -e apps/hrms;
+        gunicorn -b 0.0.0.0:8000 -w $$GUNICORN_WORKERS --threads $$GUNICORN_THREADS -t $$GUNICORN_TIMEOUT frappe.app:application
     environment:
       GUNICORN_WORKERS: '${GUNICORN_WORKERS:-2}'
       GUNICORN_THREADS: '${GUNICORN_THREADS:-4}'
@@ -92,15 +90,27 @@ services:
 
   queue-short:
     <<: *backend-defaults
-    command: bench worker --queue short,default
+    entrypoint: [bash, -c]
+    command:
+      - >
+        ./env/bin/pip install -e apps/hrms;
+        bench worker --queue short,default
 
   queue-long:
     <<: *backend-defaults
-    command: bench worker --queue long,default,short
+    entrypoint: [bash, -c]
+    command:
+      - >
+        ./env/bin/pip install -e apps/hrms;
+        bench worker --queue long,default,short
 
   scheduler:
     <<: *backend-defaults
-    command: bench schedule
+    entrypoint: [bash, -c]
+    command:
+      - >
+        ./env/bin/pip install -e apps/hrms;
+        bench schedule
 
   frontend:
     image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
