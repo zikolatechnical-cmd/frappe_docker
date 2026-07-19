@@ -1,13 +1,9 @@
 x-backend-defaults: &backend-defaults
-  image: frappe/erpnext:version-15
-  restart: unless-stopped
+  image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
+  restart: '${RESTART_POLICY:-unless-stopped}'
   volumes:
     - sites:/home/frappe/frappe-bench/sites
-    - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
-  environment:
-    INSTALL_APPS: hrms
-    PIP_PACKAGES: "git+https://github.com/frappe/hrms.git@version-15"
   depends_on:
     configurator:
       condition: service_completed_successfully
@@ -26,10 +22,9 @@ services:
       MYSQL_ROOT_HOST: '%'
     volumes:
       - db-data:/var/lib/mysql
-    expose:
-      - "3306"
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "--password=${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost",
+             "--password=${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -39,29 +34,23 @@ services:
     restart: unless-stopped
     volumes:
       - redis-cache-data:/data
-    expose:
-      - "6379"
 
   redis-queue:
     image: redis:alpine
     restart: unless-stopped
     volumes:
       - redis-queue-data:/data
-    expose:
-      - "6379"
 
   configurator:
-    image: frappe/erpnext:version-15
-    restart: "no"
+    image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
+    restart: on-failure
     platform: linux/amd64
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     entrypoint: [bash, -c]
-    # السطرين اللي في الأول دول بيضمنوا إن البينش يلاقي ملف الكومون كونفيج وميضربش أبداً
     command:
       - >
-        mkdir -p sites;
-        echo "{}" > sites/common_site_config.json;
+        ls -1 apps > sites/apps.txt;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
         bench set-config -g redis_cache "redis://$$REDIS_CACHE";
@@ -80,14 +69,14 @@ services:
 
   backend:
     <<: *backend-defaults
-    expose:
-      - "8000"
+    environment:
+      GUNICORN_WORKERS: '${GUNICORN_WORKERS:-2}'
+      GUNICORN_THREADS: '${GUNICORN_THREADS:-4}'
+      GUNICORN_TIMEOUT: '${GUNICORN_TIMEOUT:-120}'
 
   websocket:
     <<: *backend-defaults
     command: [node, /home/frappe/frappe-bench/apps/frappe/socketio.js]
-    expose:
-      - "9000"
 
   queue-short:
     <<: *backend-defaults
@@ -102,36 +91,29 @@ services:
     command: bench schedule
 
   frontend:
-    image: frappe/erpnext:version-15
+    image: '${CUSTOM_IMAGE:-frappe/erpnext}:${CUSTOM_TAG:-${ERPNEXT_VERSION}}'
     restart: unless-stopped
     platform: linux/amd64
     command: [nginx-entrypoint.sh]
     environment:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
-      FRAPPE_SITE_NAME_HEADER: 'erp.raqqm.com'
+      FRAPPE_SITE_NAME_HEADER: '${FRAPPE_SITE_NAME_HEADER:-$$host}'
       UPSTREAM_REAL_IP_ADDRESS: '127.0.0.1'
       UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
       UPSTREAM_REAL_IP_RECURSIVE: 'off'
-      PROXY_READ_TIMEOUT: '120'
-      CLIENT_MAX_BODY_SIZE: '50m'
+      PROXY_READ_TIMEOUT: '${PROXY_READ_TIMEOUT:-120}'
+      CLIENT_MAX_BODY_SIZE: '${CLIENT_MAX_BODY_SIZE:-50m}'
     volumes:
       - sites:/home/frappe/frappe-bench/sites
-    expose:
-      - "8080"
     depends_on:
       - backend
       - websocket
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.erpnext.rule=Host(`erp.raqqm.com`)"
-      - "traefik.http.routers.erpnext.entrypoints=http,https"
-      - "traefik.http.routers.erpnext.tls=true"
-      - "traefik.http.services.erpnext.loadbalancer.server.port=8080"
+    ports:
+      - "8181:8080"
 
 volumes:
   db-data:
   redis-cache-data:
   redis-queue-data:
   sites:
-  apps:
