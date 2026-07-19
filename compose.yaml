@@ -5,6 +5,9 @@ x-backend-defaults: &backend-defaults
     - sites:/home/frappe/frappe-bench/sites
     - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
+  environment:
+    # هذا السطر السحري يخبر الـ Entrypoint الرسمي بقراءة ملف المتطلبات وتثبيته تلقائياً عند بدء كل كونتينر
+    ENTRYPOINT_REQS_PATH: /home/frappe/frappe-bench/sites/apps.txt
   depends_on:
     configurator:
       condition: service_completed_successfully
@@ -54,7 +57,6 @@ services:
         if [ ! -d "apps/hrms" ]; then
           bench get-app hrms --branch version-15;
         fi;
-        ./env/bin/pip install -e apps/hrms;
         ls -1 apps > sites/apps.txt;
         bench set-config -g db_host $$DB_HOST;
         bench set-config -gp db_port $$DB_PORT;
