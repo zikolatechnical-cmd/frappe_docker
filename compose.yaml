@@ -5,6 +5,13 @@ x-backend-defaults: &backend-defaults
     - sites:/home/frappe/frappe-bench/sites
     - apps:/home/frappe/frappe-bench/apps
   platform: linux/amd64
+  entrypoint: [bash, -c] # <--- ضيف السطر ده
+  command: # <--- ضيف الكوماند ده عشان يضمن ربط التطبيق تلقائياً في أي كونتينر يقوم
+    - >
+      if [ -d "apps/hrms" ]; then
+        ./env/bin/pip install -e apps/hrms;
+      fi;
+      nginx-entrypoint.sh
   depends_on:
     configurator:
       condition: service_completed_successfully
